@@ -1,18 +1,35 @@
-
 #ifndef COMPRESS_H
 #define COMPRESS_H
 
-#include "../lib/rle.h"
-#include "../lib/lzw.h"
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
 namespace compress {
-    std::vector<unsigned int> lzw::lzw_compress(const std::vector<uint8_t> &input);
+  class Compressor {
+  public:
+    virtual ~Compressor() = default;
 
-    std::vector<uint8_t> lzw::lzw_decompress(const std::vector<unsigned int> &output);
+    virtual std::vector<uint8_t> compress(const std::vector<uint8_t> &data) = 0;
 
-    std::vector<std::pair<uint8_t, uint8_t> > rle::rle_compress(const std::vector<uint8_t> &data);
+    virtual std::vector<uint8_t> decompress(const std::vector<uint8_t> &compressedData) = 0;
+  };
 
-    std::vector<uint8_t> rle::rle_decompress(const std::vector<std::pair<uint8_t, uint8_t> > &compressed);
-}
+  // Forward declarations of compressors
+  class RLECompressor;
+  class LZWCompressor;
+  class HuffmanCompressor;
 
-#endif //COMPRESS_H
+
+  // Factory functions
+  Compressor *createRLECompressor();
+
+  Compressor *createLZWCompressor();
+
+  Compressor *createHuffmanCompressor();
+
+  void compressFile(const std::string &filePath, Compressor *compressor);
+} // namespace compress
+
+#endif // COMPRESS_H

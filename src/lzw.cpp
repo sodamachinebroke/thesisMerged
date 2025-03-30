@@ -1,13 +1,9 @@
-#include "../lib/utility.h"
+#include "../lib/lzw.h"
 
-#include <cstdint>
-#include <fstream>
-#include <iostream>
-#include <unordered_map>
-#include <vector>
-#include <filesystem>
+namespace compress {
 
-std::vector<unsigned int> encoding(const std::vector<uint8_t> &input) {
+
+std::vector<uint8_t> LZWCompressor::compress(const std::vector<uint8_t>& input) {
     std::unordered_map<std::vector<uint8_t>, unsigned int, VectorHash> table;
     for (unsigned int i = 0; i <= 255; i++) {
         table[{static_cast<uint8_t>(i)}] = i;
@@ -32,10 +28,31 @@ std::vector<unsigned int> encoding(const std::vector<uint8_t> &input) {
         output.push_back(table[p]);
     }
 
-    return output;
+    std::vector<uint8_t> compressed;
+    for (unsigned int val : output) {
+        compressed.push_back(static_cast<uint8_t>((val >> 24) & 0xFF));
+        compressed.push_back(static_cast<uint8_t>((val >> 16) & 0xFF));
+        compressed.push_back(static_cast<uint8_t>((val >> 8) & 0xFF));
+        compressed.push_back(static_cast<uint8_t>(val & 0xFF));
+    }
+    return compressed;
 }
 
-std::vector<uint8_t> decoding(const std::vector<unsigned int> &output) {
+std::vector<uint8_t> LZWCompressor::decompress(const std::vector<uint8_t>& compressedData) {
+    std::vector<unsigned int> output;
+
+    if (compressedData.size() % 4 != 0) {
+        throw std::runtime_error("Invalid compressed data format");
+    }
+
+    for (size_t i = 0; i < compressedData.size(); i += 4) {
+        unsigned int val = (static_cast<unsigned int>(compressedData[i]) << 24) |
+                           (static_cast<unsigned int>(compressedData[i + 1]) << 16) |
+                           (static_cast<unsigned int>(compressedData[i + 2]) << 8) |
+                           static_cast<unsigned int>(compressedData[i + 3]);
+        output.push_back(val);
+    }
+
     std::unordered_map<unsigned int, std::vector<uint8_t> > table;
     for (unsigned int i = 0; i <= 255; i++) {
         table[i] = {static_cast<uint8_t>(i)};
@@ -58,7 +75,7 @@ std::vector<uint8_t> decoding(const std::vector<unsigned int> &output) {
             current = p;
             current.push_back(p[0]);
         } else {
-            return {}; // Error
+            return {};
         }
 
         decoded.insert(decoded.end(), current.begin(), current.end());
@@ -71,56 +88,4 @@ std::vector<uint8_t> decoding(const std::vector<unsigned int> &output) {
     return decoded;
 }
 
-int lzw(std::filesystem::path filename) {
-
-
-  std::filesystem::path outfilename = filename += ".lzw";
-
-    std::ifstream infile(filename, std::ios::binary | std::ios::ate);
-    if (!infile.is_open()) {
-        std::cerr << "Unable to open file for reading: " << filename.string() << std::endl;
-        return 1;
-    }
-
-    std::streamsize size = infile.tellg();
-    infile.seekg(0, std::ios::beg);
-
-    std::vector<uint8_t> file_data(size);
-    infile.read(reinterpret_cast<char *>(file_data.data()), size);
-    infile.close();
-
-    std::vector<unsigned int> compressed_data = encoding(file_data);
-
-    std::ofstream outfile(outfilename, std::ios::binary);
-    if (!outfile.is_open()) {
-        std::cerr << "Unable to open file for writing: " << outfilename.string() << std::endl;
-        return 1;
-    }
-    outfile.write(reinterpret_cast<const char *>(compressed_data.data()),
-                  compressed_data.size() * sizeof(unsigned int));
-    outfile.close();
-
-    std::ifstream compressed_infile(outfilename, std::ios::binary | std::ios::ate);
-    if (!compressed_infile.is_open()) {
-        std::cerr << "Unable to open compressed file for reading: " << outfilename.string() << std::endl;
-        return 1;
-    }
-    std::streamsize compressed_size = compressed_infile.tellg();
-    compressed_infile.seekg(0, std::ios::beg);
-
-    std::vector<unsigned int> read_compressed_data(compressed_size / sizeof(unsigned int));
-    compressed_infile.read(reinterpret_cast<char *>(read_compressed_data.data()), compressed_size);
-    compressed_infile.close();
-
-    std::vector<uint8_t> decompressed_data = decoding(read_compressed_data);
-
-    if (file_data == decompressed_data) {
-        std::cout << "Compression & decompression successful" << std::endl;
-        std::cout << "Original size: " << file_data.size() << std::endl;
-        std::cout << "Compressed size (encoded integers): " << read_compressed_data.size() << std::endl;
-    } else {
-        std::cerr << "Decompression failed" << std::endl;
-    }
-
-    return 0;
 }
