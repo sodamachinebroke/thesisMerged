@@ -3,14 +3,23 @@ project(thesisMerged)
 
 set(CMAKE_CXX_STANDARD 26)
 
-include_directories(include)
-
-set(SOURCE_FILES
+# Create a library from your sources
+add_library(compression_lib
         src/lzw.cpp
         src/rle.cpp
         src/huffman.cpp
         src/compress.cpp
-        main.cpp
 )
 
-add_executable(thesisMerged ${SOURCE_FILES})
+# Public headers (exposed to tests and main executable)
+target_include_directories(compression_lib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib
+)
+
+# Main executable
+add_executable(thesisMerged main.cpp)
+target_link_libraries(thesisMerged PRIVATE compression_lib)
+
+# Enable testing
+enable_testing()
+add_subdirectory(test)
