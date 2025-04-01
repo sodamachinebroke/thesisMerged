@@ -7,6 +7,8 @@
 namespace compress {
 
   std::vector<uint8_t> HuffmanCompressor::compress(const std::vector<uint8_t> &data) {
+    if (data.empty())
+      throw std::runtime_error("Empty input");
     std::map<uint8_t, int> freq;
     for (uint8_t byte: data) {
       freq[byte]++;
