@@ -44,13 +44,13 @@ namespace compress {
   }
 
   std::vector<uint8_t> HuffmanCompressor::decompress(const std::vector<uint8_t> &compressedData) {
-    DecompressionInfo info = decompressHeader(compressedData);
-    std::vector<uint8_t> decompData = decompressData(compressedData, info.codePairs, info.dataOffset, info.paddingBits);
+    auto [codePairs, dataOffset, paddingBits] = decompressHeader(compressedData);
+    std::vector<uint8_t> decompData = decompressData(compressedData, codePairs, dataOffset, paddingBits);
 
     return decompData;
   }
 
-  void HuffmanCompressor::storeCodes(const MinHeapNode *root, std::string str) {
+  void HuffmanCompressor::storeCodes(const MinHeapNode *root, const std::string &str) {
     if (!root)
       return;
     if (root->data != 0)
@@ -72,7 +72,7 @@ namespace compress {
       minHeap.pop();
       MinHeapNode *right = minHeap.top();
       minHeap.pop();
-      MinHeapNode *top = new MinHeapNode(0, left->freq + right->freq);
+      auto top = new MinHeapNode(0, left->freq + right->freq);
       top->left = left;
       top->right = right;
       minHeap.push(top);
@@ -92,7 +92,7 @@ namespace compress {
   void HuffmanCompressor::writeBits(std::ofstream &output, const std::string &bits) {
     uint8_t currentByte = 0;
     int bitCount = 0;
-    for (char bit: bits) {
+    for (const char bit: bits) {
       currentByte = (currentByte << 1) | (bit == '1');
       bitCount++;
       if (bitCount == 8) {
@@ -137,8 +137,8 @@ namespace compress {
                                              std::map<std::string, uint8_t> &codeMap) {
     size_t index = 0;
     while (index < compressedData.size()) {
-      uint8_t count = compressedData[index++];
-      uint8_t length = compressedData[index++];
+      const uint8_t count = compressedData[index++];
+      const uint8_t length = compressedData[index++];
       for (int i = 0; i < count; ++i) {
         if (index >= compressedData.size())
           throw std::runtime_error("Invalid compressed data format.");
@@ -158,7 +158,7 @@ namespace compress {
 
   std::vector<uint8_t> HuffmanCompressor::decompressData(const std::vector<uint8_t> &compressedData,
                                                          const std::vector<std::pair<uint8_t, std::string>> &codePairs,
-                                                         size_t dataOffset, int paddingBits) {
+                                                         const size_t dataOffset, const int paddingBits) {
     std::string bitString;
     for (size_t i = dataOffset; i < compressedData.size(); ++i) {
       uint8_t byte = compressedData[i];
@@ -201,18 +201,18 @@ namespace compress {
     return true;
   }
 
-  DecompressionInfo HuffmanCompressor::decompressHeader(const std::vector<unsigned char> &compressed) {
+  DecompressionInfo HuffmanCompressor::decompressHeader(const std::vector<uint8_t> &compressed) {
     std::vector<std::pair<uint8_t, std::string>> decompCodes;
-    int padding = compressed[0];
-    int mapLength = compressed[1];
+    const int padding = compressed[0];
+    const int mapLength = compressed[1];
     int i = 2;
     while (decompCodes.size() < mapLength) {
-      int numCodes = compressed[i];
-      int codeLength = compressed[i + 1];
+      const int numCodes = compressed[i];
+      const int codeLength = compressed[i + 1];
       for (int j = 0; j < numCodes; ++j) {
-        int codeIndex = i + 2 + j * 2;
+        const int codeIndex = i + 2 + j * 2;
         int code = compressed[codeIndex];
-        unsigned char symbolByte = compressed[codeIndex + 1];
+        const uint8_t symbolByte = compressed[codeIndex + 1];
         std::bitset<8> symbolBits(symbolByte);
         std::string symbolString = symbolBits.to_string();
         std::string symbol = symbolString.substr(0, codeLength);
