@@ -2,6 +2,7 @@
 #include "../lib/huffman.h"
 #include <fstream>
 #include <iostream>
+#include <queue>
 #include <stdexcept>
 
 namespace compress {
@@ -13,11 +14,16 @@ namespace compress {
     for (uint8_t byte: data) {
       freq[byte]++;
     }
+    if (freq.size() > 1) {
+      buildHuffmanTree(freq);
+    } else {
+      codes.emplace(freq.find(data[0])->first, "0");
+    }
 
-    buildHuffmanTree(freq);
 
     std::vector<std::pair<std::string, uint8_t>> invertedMap;
     for (const auto &[byte, code]: codes) {
+      std::cout << static_cast<int>(byte) << ": " << code << std::endl;
       invertedMap.emplace_back(code, byte);
     }
     std::ranges::sort(invertedMap, [](const auto &a, const auto &b) { return a.first.length() < b.first.length(); });
@@ -66,7 +72,6 @@ namespace compress {
     for (auto &[byte, frequency]: freq) {
       minHeap.push(new MinHeapNode(byte, frequency));
     }
-
     while (minHeap.size() > 1) {
       MinHeapNode *left = minHeap.top();
       minHeap.pop();
