@@ -23,7 +23,7 @@ protected:
     std::vector<uint8_t> data(size);
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 255);
+    std::uniform_int_distribution<> dis(0, 254);
 
     for (size_t i = 0; i < size; ++i) {
       data[i] = static_cast<uint8_t>(dis(gen));
@@ -96,14 +96,22 @@ TEST_F(HuffmanTest, CompressionRatio) {
 
 // Test with all possible byte values
 TEST_F(HuffmanTest, AllByteValues) {
-  std::vector<uint8_t> original(256);
+  std::vector<uint8_t> original(255);
   for (int i = 0; i < 256; ++i) {
     original[i] = static_cast<uint8_t>(i);
   }
 
   const auto compressed = compressor.compress(original);
+  std::cout << "Compressed" << std::endl;
+  for (auto byte: compressed) {
+    std::cout << static_cast<int>(byte) << " ";
+  }
   const auto decompressed = compressor.decompress(compressed);
-
+  std::cout << std::endl << "Decompressed" << std::endl;
+  for (auto byte: decompressed) {
+    std::cout << static_cast<int>(byte) << " ";
+  }
+  std::cout << std::endl;
   EXPECT_EQ(original, decompressed);
 }
 

@@ -22,10 +22,11 @@ namespace compress {
 
 
     std::vector<std::pair<std::string, uint8_t>> invertedMap;
-    for (const auto &[byte, code]: codes) {
-      std::cout << static_cast<int>(byte) << ": " << code << std::endl;
+    for (const auto &[byte, code]: codes)
       invertedMap.emplace_back(code, byte);
-    }
+
+    std::cout << invertedMap.size() << std::endl;
+
     std::ranges::sort(invertedMap, [](const auto &a, const auto &b) { return a.first.length() < b.first.length(); });
 
     std::ofstream output("temp_compressed.bin", std::ios::binary);
@@ -45,7 +46,6 @@ namespace compress {
     std::vector<uint8_t> compressedData(size);
     compressedFile.read(reinterpret_cast<char *>(compressedData.data()), size);
     compressedFile.close();
-
     return compressedData;
   }
 
@@ -59,7 +59,7 @@ namespace compress {
   void HuffmanCompressor::storeCodes(const MinHeapNode *root, const std::string &str) {
     if (!root)
       return;
-    if (root->data != 0)
+    if (!root->left && !root->right)
       codes[root->data] = str;
     storeCodes(root->left, str + "0");
     storeCodes(root->right, str + "1");
