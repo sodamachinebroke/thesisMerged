@@ -2,6 +2,7 @@
 #include "../lib/huffman.h"
 #include <fstream>
 #include <iostream>
+#include <queue>
 #include <stdexcept>
 
 namespace compress {
@@ -13,13 +14,19 @@ namespace compress {
     for (uint8_t byte: data) {
       freq[byte]++;
     }
+    if (freq.size() > 1) {
+      buildHuffmanTree(freq);
+    } else {
+      codes.emplace(freq.find(data[0])->first, "0");
+    }
 
-    buildHuffmanTree(freq);
 
     std::vector<std::pair<std::string, uint8_t>> invertedMap;
-    for (const auto &[byte, code]: codes) {
+    for (const auto &[byte, code]: codes)
       invertedMap.emplace_back(code, byte);
-    }
+
+    std::cout << invertedMap.size() << std::endl;
+
     std::ranges::sort(invertedMap, [](const auto &a, const auto &b) { return a.first.length() < b.first.length(); });
 
     std::ofstream output("temp_compressed.bin", std::ios::binary);
@@ -39,7 +46,6 @@ namespace compress {
     std::vector<uint8_t> compressedData(size);
     compressedFile.read(reinterpret_cast<char *>(compressedData.data()), size);
     compressedFile.close();
-
     return compressedData;
   }
 
@@ -53,7 +59,7 @@ namespace compress {
   void HuffmanCompressor::storeCodes(const MinHeapNode *root, const std::string &str) {
     if (!root)
       return;
-    if (root->data != 0)
+    if (!root->left && !root->right)
       codes[root->data] = str;
     storeCodes(root->left, str + "0");
     storeCodes(root->right, str + "1");
@@ -66,7 +72,6 @@ namespace compress {
     for (auto &[byte, frequency]: freq) {
       minHeap.push(new MinHeapNode(byte, frequency));
     }
-
     while (minHeap.size() > 1) {
       MinHeapNode *left = minHeap.top();
       minHeap.pop();
