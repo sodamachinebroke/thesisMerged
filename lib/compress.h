@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <fstream>
-#include <iostream>
+#include <memory>
 #include <vector>
 
 namespace compress {
@@ -23,13 +23,13 @@ namespace compress {
 
 
   // Factory functions
-  Compressor *createRLECompressor();
+  std::unique_ptr<Compressor> createRLECompressor();
 
-  Compressor *createLZWCompressor();
+  std::unique_ptr<Compressor> createLZWCompressor();
 
-  Compressor *createHuffmanCompressor();
+  std::unique_ptr<Compressor> createHuffmanCompressor();
 
-  void compressFile(const std::string &filePath, Compressor *compressor);
+  void compressFile(const std::string &filePath, const std::unique_ptr<Compressor> &compressor);
 } // namespace compress
 
 #endif // COMPRESS_H

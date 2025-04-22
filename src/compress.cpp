@@ -1,11 +1,13 @@
 #include "../lib/compress.h"
+#include <iostream>
+#include <memory>
 #include "../lib/huffman.h"
 #include "../lib/lzw.h"
 #include "../lib/rle.h"
 
 namespace compress {
 
-  void compressFile(const std::string &filePath, Compressor *compressor) {
+  void compressFile(const std::string &filePath, const std::unique_ptr<Compressor> &compressor) {
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
       std::cerr << "Error: Unable to open file " << filePath << std::endl;
@@ -16,7 +18,9 @@ namespace compress {
     file.seekg(0, std::ios::beg);
 
     std::vector<unsigned char> fileData(fileSize);
-    file.read(reinterpret_cast<char *>(fileData.data()), fileSize);
+    if (!fileData.empty()) {
+      file.read(static_cast<char *>(static_cast<void *>(fileData.data())), fileSize);
+    }
     file.close();
 
     std::vector<unsigned char> compressedData = compressor->compress(fileData);
@@ -28,16 +32,19 @@ namespace compress {
       return;
     }
 
-    compressedFile.write(reinterpret_cast<char *>(compressedData.data()), compressedData.size());
+    if (!compressedData.empty()) {
+      compressedFile.write(static_cast<const char *>(static_cast<const void *>(compressedData.data())),
+                           compressedData.size());
+    }
     compressedFile.close();
 
     std::cout << "File compressed successfully: " << compressedFilePath << std::endl;
   }
 
-  Compressor *createRLECompressor() { return new RLECompressor(); }
+  std::unique_ptr<Compressor> createRLECompressor() { return std::make_unique<RLECompressor>(); }
 
-  Compressor *createLZWCompressor() { return new LZWCompressor(); }
+  std::unique_ptr<Compressor> createLZWCompressor() { return std::make_unique<LZWCompressor>(); }
 
-  Compressor *createHuffmanCompressor() { return new HuffmanCompressor(); }
+  std::unique_ptr<Compressor> createHuffmanCompressor() { return std::make_unique<HuffmanCompressor>(); }
 
 } // namespace compress
