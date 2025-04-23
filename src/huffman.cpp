@@ -1,7 +1,10 @@
 // huffman.cpp
 #include "../lib/huffman.h"
+#include <algorithm> // Include for std::ranges::sort
+#include <bitset> // Include for std::bitset
 #include <fstream>
 #include <iostream>
+#include <memory> // Include for smart pointers
 #include <queue>
 #include <stdexcept>
 
@@ -20,12 +23,9 @@ namespace compress {
       codes.emplace(freq.find(data[0])->first, "0");
     }
 
-
     std::vector<std::pair<std::string, uint8_t>> invertedMap;
     for (const auto &[byte, code]: codes)
       invertedMap.emplace_back(code, byte);
-
-    std::cout << invertedMap.size() << std::endl;
 
     std::ranges::sort(invertedMap, [](const auto &a, const auto &b) { return a.first.length() < b.first.length(); });
 
@@ -43,8 +43,8 @@ namespace compress {
     std::ifstream compressedFile("temp_compressed.bin", std::ios::binary | std::ios::ate);
     std::streamsize size = compressedFile.tellg();
     compressedFile.seekg(0, std::ios::beg);
-    std::vector<uint8_t> compressedData(size);
-    compressedFile.read(reinterpret_cast<char *>(compressedData.data()), size);
+    std::vector<uint8_t> compressedData(static_cast<size_t>(size)); // Use static_cast for size_t conversion
+    compressedFile.read(reinterpret_cast<char *>(compressedData.data()), size); //  Consider using compressedData.data()
     compressedFile.close();
     return compressedData;
   }
@@ -52,11 +52,11 @@ namespace compress {
   std::vector<uint8_t> HuffmanCompressor::decompress(const std::vector<uint8_t> &compressedData) {
     auto [codePairs, dataOffset, paddingBits] = decompressHeader(compressedData);
     std::vector<uint8_t> decompData = decompressData(compressedData, codePairs, dataOffset, paddingBits);
-
     return decompData;
   }
 
-  void HuffmanCompressor::storeCodes(const MinHeapNode *root, const std::string &str) {
+  void HuffmanCompressor::storeCodes(const std::shared_ptr<MinHeapNode> &root,
+                                     const std::string &str) { // Use shared_ptr
     if (!root)
       return;
     if (!root->left && !root->right)
@@ -66,24 +66,29 @@ namespace compress {
   }
 
   void HuffmanCompressor::buildHuffmanTree(std::map<uint8_t, int> &freq) {
-    auto cmp = [](const MinHeapNode *l, const MinHeapNode *r) { return l->freq > r->freq; };
-    std::priority_queue<MinHeapNode *, std::vector<MinHeapNode *>, decltype(cmp)> minHeap(cmp);
+    auto cmp = [](const std::shared_ptr<MinHeapNode> &l, const std::shared_ptr<MinHeapNode> &r) {
+      return l->freq > r->freq;
+    };
+    std::priority_queue<std::shared_ptr<MinHeapNode>, std::vector<std::shared_ptr<MinHeapNode>>, decltype(cmp)> minHeap(
+        cmp);
 
     for (auto &[byte, frequency]: freq) {
-      minHeap.push(new MinHeapNode(byte, frequency));
+      minHeap.push(std::make_shared<MinHeapNode>(byte, frequency));
     }
+
     while (minHeap.size() > 1) {
-      MinHeapNode *left = minHeap.top();
+      std::shared_ptr<MinHeapNode> left = minHeap.top();
       minHeap.pop();
-      MinHeapNode *right = minHeap.top();
+      std::shared_ptr<MinHeapNode> right = minHeap.top();
       minHeap.pop();
-      auto top = new MinHeapNode(0, left->freq + right->freq);
+      std::shared_ptr<MinHeapNode> top = std::make_shared<MinHeapNode>(0, left->freq + right->freq);
       top->left = left;
       top->right = right;
       minHeap.push(top);
     }
-
-    storeCodes(minHeap.top(), "");
+    if (!minHeap.empty()) {
+      storeCodes(minHeap.top(), "");
+    }
   }
 
   std::string HuffmanCompressor::encode(const std::vector<uint8_t> &data) {
@@ -134,7 +139,7 @@ namespace compress {
   std::string HuffmanCompressor::b(uint8_t v) {
     std::string s(8, '0');
     for (int i = 0; i < 8; ++i)
-      s[7 - i] = (v >> i & 1) + '0';
+      s[7 - i] = ((v >> i) & 1) + '0';
     return s;
   }
 
@@ -163,8 +168,8 @@ namespace compress {
 
   std::vector<uint8_t> HuffmanCompressor::decompressData(const std::vector<uint8_t> &compressedData,
                                                          const std::vector<std::pair<uint8_t, std::string>> &codePairs,
-                                                         const size_t dataOffset, const int paddingBits) {
-    std::string bitString;
+                                                         size_t dataOffset, const int paddingBits) {
+    std::string bitString = "";
     for (size_t i = dataOffset; i < compressedData.size(); ++i) {
       uint8_t byte = compressedData[i];
       bitString += b(byte);
@@ -174,8 +179,9 @@ namespace compress {
     }
     std::vector<uint8_t> decodedData;
     std::string currentCode;
-    for (char bit: bitString) {
-      currentCode += bit;
+    size_t bitIndex = 0;
+    while (bitIndex < bitString.size()) {
+      currentCode += bitString[bitIndex];
       for (const auto &pair: codePairs) {
         if (pair.second == currentCode) {
           decodedData.push_back(pair.first);
@@ -183,6 +189,7 @@ namespace compress {
           break;
         }
       }
+      bitIndex++;
     }
     return decodedData;
   }
@@ -216,16 +223,14 @@ namespace compress {
       const int codeLength = compressed[i + 1];
       for (int j = 0; j < numCodes; ++j) {
         const int codeIndex = i + 2 + j * 2;
-        int code = compressed[codeIndex];
         const uint8_t symbolByte = compressed[codeIndex + 1];
         std::bitset<8> symbolBits(symbolByte);
-        std::string symbolString = symbolBits.to_string();
-        std::string symbol = symbolString.substr(0, codeLength);
-        decompCodes.emplace_back(code, symbol);
+        std::string symbol = symbolBits.to_string().substr(0, codeLength); // changed to use substr
+        uint8_t symbolValue = compressed[codeIndex];
+        decompCodes.emplace_back(symbolValue, symbol);
       }
       i += 2 + numCodes * 2;
     }
     return {decompCodes, static_cast<size_t>(i), padding};
   }
-
 } // namespace compress

@@ -5,6 +5,7 @@
 #include <bitset>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "compress.h"
@@ -14,13 +15,15 @@ namespace compress {
   struct MinHeapNode {
     uint8_t data;
     int freq;
-    MinHeapNode *left, *right;
+    std::shared_ptr<MinHeapNode> left, right; // Use shared_ptr
 
     MinHeapNode(const uint8_t data, const int freq) : data(data), freq(freq), left(nullptr), right(nullptr) {}
   };
 
   struct CompareMinHeapNode {
-    bool operator()(const MinHeapNode *l, const MinHeapNode *r) const { return l->freq > r->freq; }
+    bool operator()(const std::shared_ptr<MinHeapNode> &l, const std::shared_ptr<MinHeapNode> &r) const {
+      return l->freq > r->freq;
+    } // Use shared_ptr
   };
 
   struct DecompressionInfo {
@@ -37,7 +40,7 @@ namespace compress {
   private:
     std::map<uint8_t, std::string> codes;
 
-    void storeCodes(const MinHeapNode *root, const std::string &str);
+    void storeCodes(const std::shared_ptr<MinHeapNode> &root, const std::string &str); // Use shared_ptr
     void buildHuffmanTree(std::map<uint8_t, int> &freq);
     std::string encode(const std::vector<uint8_t> &data);
     void writeBits(std::ofstream &output, const std::string &bits);

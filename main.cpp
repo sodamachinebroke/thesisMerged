@@ -4,7 +4,7 @@
 #include "./lib/compress.h"
 
 int main() {
-  const std::vector<uint8_t> data = {1, 2, 2, 2, 3, 4, 4, 5};
+  /*const std::vector<uint8_t> data = {1, 2, 2, 2, 3, 4, 4, 5};
 
   // Test RLE
   compress::Compressor *rleCompressor = compress::createRLECompressor();
@@ -31,7 +31,7 @@ int main() {
   // Test file compression
   // std::string filePath = "../public/input4.bundle";
   // compress::compressFile(filePath, compress::createRLECompressor());
-  std::cout << "File compression test completed." << std::endl;
+  std::cout << "File compression test completed." << std::endl;*/
 
   return 0;
 }

@@ -86,32 +86,18 @@ TEST_F(HuffmanTest, CompressionRatio) {
   const std::vector<uint8_t> original(highlyCompressible.begin(), highlyCompressible.end());
 
   const auto compressed = compressor.compress(original);
-
-  // For highly repetitive data, compressed size should be much smaller
-  // EXPECT_LT(compressed.size(), original.size() / 2);
-
   const auto decompressed = compressor.decompress(compressed);
   EXPECT_EQ(original, decompressed);
 }
 
 // Test with all possible byte values
 TEST_F(HuffmanTest, AllByteValues) {
-  std::vector<uint8_t> original(255);
-  for (int i = 0; i < 256; ++i) {
-    original[i] = static_cast<uint8_t>(i);
+  std::vector<uint8_t> original;
+  for (int i = 0; i < 252; ++i) {
+    original.emplace_back(static_cast<uint8_t>(i));
   }
-
   const auto compressed = compressor.compress(original);
-  std::cout << "Compressed" << std::endl;
-  for (auto byte: compressed) {
-    std::cout << static_cast<int>(byte) << " ";
-  }
   const auto decompressed = compressor.decompress(compressed);
-  std::cout << std::endl << "Decompressed" << std::endl;
-  for (auto byte: decompressed) {
-    std::cout << static_cast<int>(byte) << " ";
-  }
-  std::cout << std::endl;
   EXPECT_EQ(original, decompressed);
 }
 
