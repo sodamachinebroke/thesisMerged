@@ -15,7 +15,7 @@ namespace compress {
   struct MinHeapNode {
     uint8_t data;
     int freq;
-    std::shared_ptr<MinHeapNode> left, right; // Use shared_ptr
+    std::shared_ptr<MinHeapNode> left, right;
 
     MinHeapNode(const uint8_t data, const int freq) : data(data), freq(freq), left(nullptr), right(nullptr) {}
   };
@@ -23,7 +23,7 @@ namespace compress {
   struct CompareMinHeapNode {
     bool operator()(const std::shared_ptr<MinHeapNode> &l, const std::shared_ptr<MinHeapNode> &r) const {
       return l->freq > r->freq;
-    } // Use shared_ptr
+    }
   };
 
   struct DecompressionInfo {
@@ -32,10 +32,10 @@ namespace compress {
     int paddingBits;
   };
 
-  class HuffmanCompressor final : public Compressor {
+  class HuffmanCompressor final {
   public:
-    std::vector<uint8_t> compress(const std::vector<uint8_t> &data) override;
-    std::vector<uint8_t> decompress(const std::vector<uint8_t> &compressedData) override;
+    std::vector<uint8_t> compress(const std::vector<uint8_t> &data);
+    std::vector<uint8_t> decompress(const std::vector<uint8_t> &compressedData);
 
   private:
     std::map<uint8_t, std::string> codes;

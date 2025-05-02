@@ -19,10 +19,10 @@ namespace compress {
     }
   };
 
-  class LZWCompressor : public Compressor {
+  class LZWCompressor {
   public:
-    std::vector<uint8_t> compress(const std::vector<uint8_t> &data) override;
-    std::vector<uint8_t> decompress(const std::vector<uint8_t> &compressedData) override;
+    std::vector<uint8_t> compress(const std::vector<uint8_t> &data);
+    std::vector<uint8_t> decompress(const std::vector<uint8_t> &compressedData);
 
   private:
     static constexpr uint16_t DICT_RESET_CODE = 256;
