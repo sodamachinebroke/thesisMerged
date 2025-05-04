@@ -8,17 +8,10 @@ using namespace compress;
 
 class HuffmanTest : public ::testing::Test {
 protected:
-  HuffmanCompressor compressor;
+  void SetUp() override {}
 
-  void SetUp() override {
-    // Any setup code needed before each test
-  }
+  void TearDown() override {}
 
-  void TearDown() override {
-    // Any cleanup code needed after each test
-  }
-
-  // Helper function to generate random data
   static std::vector<uint8_t> generateRandomData(const size_t size) {
     std::vector<uint8_t> data(size);
     std::random_device rd;
@@ -35,8 +28,8 @@ protected:
 // Test empty input
 TEST_F(HuffmanTest, EmptyInputThrows) {
   try {
-    std::vector<uint8_t> empty;
     HuffmanCompressor compressor;
+    std::vector<uint8_t> empty;
     compressor.compress(empty);
     FAIL() << "Expected std::runtime_error";
   } catch (const std::runtime_error &e) {
@@ -48,6 +41,7 @@ TEST_F(HuffmanTest, EmptyInputThrows) {
 
 // Test basic compression and decompression
 TEST_F(HuffmanTest, CompressDecompressBasic) {
+  HuffmanCompressor compressor;
   std::string testString = "Hello, world! This is a test string for Huffman coding.";
   const std::vector<uint8_t> original(testString.begin(), testString.end());
 
@@ -59,6 +53,7 @@ TEST_F(HuffmanTest, CompressDecompressBasic) {
 
 // Test with repeated characters (should compress well)
 TEST_F(HuffmanTest, RepeatedCharacters) {
+  HuffmanCompressor compressor;
   std::string repeated = "aaaaabbbbbcccccdddddeeeee";
   const std::vector<uint8_t> original(repeated.begin(), repeated.end());
 
@@ -71,6 +66,7 @@ TEST_F(HuffmanTest, RepeatedCharacters) {
 
 // Test with random data
 TEST_F(HuffmanTest, RandomData) {
+  HuffmanCompressor compressor;
   const auto original = generateRandomData(96); // 1KB of random data
 
   const auto compressed = compressor.compress(original);
@@ -82,6 +78,7 @@ TEST_F(HuffmanTest, RandomData) {
 
 // Test that compression actually reduces size for compressible data
 TEST_F(HuffmanTest, CompressionRatio) {
+  HuffmanCompressor compressor;
   std::string highlyCompressible(1000, 'a'); // 1000 'a's
   const std::vector<uint8_t> original(highlyCompressible.begin(), highlyCompressible.end());
 
@@ -92,6 +89,7 @@ TEST_F(HuffmanTest, CompressionRatio) {
 
 // Test with all possible byte values
 TEST_F(HuffmanTest, AllByteValues) {
+  HuffmanCompressor compressor;
   std::vector<uint8_t> original;
   for (int i = 0; i < 252; ++i) {
     original.emplace_back(static_cast<uint8_t>(i));
@@ -103,6 +101,7 @@ TEST_F(HuffmanTest, AllByteValues) {
 
 // Test with larger data
 TEST_F(HuffmanTest, LargerData) {
+  HuffmanCompressor compressor;
   const auto original = generateRandomData(1024 * 1024); // 1MB of random data
 
   const auto compressed = compressor.compress(original);
