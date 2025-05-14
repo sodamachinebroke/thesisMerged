@@ -3,7 +3,7 @@ project(thesisMerged)
 
 set(CMAKE_CXX_STANDARD 26)
 
-# Create a library from your sources
+# Create a library from sources
 add_library(compression_lib
         src/lzw.cpp
         src/rle.cpp
@@ -23,3 +23,4 @@ target_link_libraries(thesisMerged PRIVATE compression_lib)
 # Enable testing
 enable_testing()
 add_subdirectory(test)
+add_subdirectory(benchmark)
